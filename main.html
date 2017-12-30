@@ -1,0 +1,64 @@
+<head>
+<title="Bank login"></title>
+<link rel="stylesheet" href="main.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="http://cdn.rawgit.com/h2non/jsHashes/master/hashes.js"></script>
+</head>
+<body>
+	<div class="form">
+    <form>
+      <input type="text" id="username" placeholder="username"/>
+      <input type="password" id="password" placeholder="password"/>
+    </form>
+    <button id="submit">login</button>
+    <p class="message">Not registered? <a id="register" class="create-text">Create an account</a></p>
+  </div>
+</body>
+<script>
+
+document.getElementById('register').onclick = function() {	
+	if(document.getElementById('username').value != '' && document.getElementById('password').value != ''){
+		var username = document.getElementById('username').value;
+		var MD5 = new Hashes.MD5();
+		var password = MD5.hex(document.getElementById('password').value);
+		var info = {'username':username,'password':password};
+		$.ajax
+		({
+		type: "POST",
+		url: "/register",
+		crossDomain:"true",
+		dataType: "json",	
+		data: info,
+		}).done(function (data){
+			if(data.status === 'failure') window.alert(data.info);	
+			else if(data.status === 'success') submit();
+			});
+		}
+};
+
+document.getElementById('submit').onclick = function() {
+	submit();
+	}
+
+function submit(){
+	if(document.getElementById('username').value != '' && document.getElementById('password').value != ''){
+		var username = document.getElementById('username').value;
+		var MD5 = new Hashes.MD5();
+		var password = MD5.hex(document.getElementById('password').value);
+		var info = {'username':username,'password':password};
+		$.ajax
+		({
+		type: "POST",
+		url: "/login",
+		crossDomain:"true",
+		dataType: "json",	
+		data: info,
+		}).done(function (data){
+			if(data.status === 'failure') window.alert(data.info);	
+			else if(data.status === 'success') window.location = 'profile';	
+			});
+		}
+};
+
+</script>
+

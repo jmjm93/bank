@@ -1,0 +1,65 @@
+<head>
+<title="Profile"></title>
+<link rel="stylesheet" href="main.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
+<script src ="./blind.js"></script>
+<body>
+<div class="profile">
+    <form>
+		<label id="username"></label>
+		<p></p>
+		<label id="balance"></label>
+    </form>
+    <button id="getCoin">Generate new eCoin</button>
+  </div>
+</body>
+<script>
+$.ajax
+	({
+	type: "GET",
+	url: "/userData",
+	crossDomain:"true",
+	}).done(function (data){
+		if(data.status === 'failure') window.alert(data.info);	
+		else if(data.status === 'success'){
+			document.getElementById("username").innerText = "User name: " + data.username;
+			document.getElementById("balance").innerText = "Balance(EUR): " + data.balance;
+		}
+		});
+	$.ajax
+	({
+	type: "GET",
+	url: "/key",
+	crossDomain:"true",
+	}).done(function (data){
+		setKeys(data.e,data.n);
+		});
+	
+
+	document.getElementById('getCoin').onclick = function()
+	{
+		console.log(fetchKeys());
+	var newId = bigInt("55555" + bigInt.randBetween(0,2e256).toString());
+	newId = blind(newId.toString());
+	var toSend = {'id':newId.blindedMessage};
+	$.ajax
+	({
+	type: "POST",
+	url: "/signCoin",
+	crossDomain:"true",
+	dataType:"json",
+	data:toSend,
+	}).done(function (data){
+		var newCoin = unblind(data.signature,newId.blindFactor);
+		var _id = unsign(newCoin);
+	    if(_id.charCodeAt(0) != 53 || 
+	    _id.charCodeAt(1) != 53 || 
+	    _id.charCodeAt(2) != 53 || 
+	    _id.charCodeAt(3) != 53 || 
+	    _id.charCodeAt(4) != 53) window.alert("Error, couldn't verify signature.");
+	    else window.alert("Coin id: \n" + _id);
+		});
+	}
+	
+</script>
