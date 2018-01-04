@@ -1,11 +1,12 @@
-//whether this is running on the client or on the server, the values inside this variable should be the ones from the bank
-// in the case of the client it'll only contain the public values, since the client should never call the sign method
+//whether this is running on the client or on the server, the values inside this variable should be the ones from the server
+// in the case of the client it'll only contain the public key and module
 var key;
 
 function setKeys(exp,mod)
 {
 	key = {'n':bigInt(mod),'e':bigInt(exp)};
 }
+
 function generateKeys(size)
 {
 	var p = bigInt.randBetween(0,size);
@@ -25,6 +26,7 @@ function generateKeys(size)
         key = {'n':n,'e':e,'d':d};
 }
 
+
 function fetchKeys()
 {
 	return key;
@@ -35,11 +37,13 @@ function sign(message)
 	if(key!=undefined){
     var d = key.d;
     var n = key.n;
-    var value = bigInt(message);
-    var sigma = value.modPow(d,n);
+	var value = bigInt(message);    
+var sigma = value.modPow(d,n);
     return sigma.toString();
 	}
 }
+
+
 
 function unsign(signature)
 {
@@ -48,6 +52,15 @@ function unsign(signature)
     var value = bigInt(signature);
     var message = value.modPow(e,n);
     return message.toString();
+}
+
+
+
+// explicit unsign method in case a signature needs to be removed with a different set of keys than the local ones
+function unsignWithValues(signature,e,n)
+{	var value = bigInt(signature);
+	var message = value.modPow(bigInt(e),bigInt(n));
+	return message.toString();
 }
 
 function blind(message)

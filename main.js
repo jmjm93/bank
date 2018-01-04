@@ -1,18 +1,25 @@
 //NODE MODULES
 var http = require('http');
+var request = require('request');
 var express = require('express');
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var path = require('path');
 var session = require('express-session');
 var bigInt = require('big-integer');
+var Hashes = require('jshashes');
 var fs = require('fs');
 
 //EXTERNAL JS
 eval(fs.readFileSync('./public/blind.js').toString());
+eval(fs.readFileSync('./public/proof.js').toString());
+eval(fs.readFileSync('./public/rsa.js').toString());
 var KEYSIZE = bigInt("2");
 KEYSIZE = KEYSIZE.pow(512);
 generateKeys(KEYSIZE);
+var keys=fetchKeys();
+
+var PORT=8081;
 
 //MONGO CONF
 var mongo = require('mongodb').MongoClient;
@@ -66,7 +73,7 @@ app.get('/', function (req,res){
 
 app.post('/login', function (req,res){
 	mongo.connect(url, function(err, db){
-		console.log('/LOGIN ' + req.body);
+		console.log('/LOGIN ');
 		if(err)throw err;
 		var datab = db.db(database);
 		var collection = datab.collection('users');
@@ -83,13 +90,12 @@ app.post('/login', function (req,res){
 });
 
 app.post('/register', function(req,res){
-	console.log('/REGISTER ' + req.body);
+	console.log('/REGISTER ');
 	mongo.connect(url, function(err, db){
 		if(err)throw err;
 		var datab = db.db(database);
 		var collection = datab.collection('users');
 		collection.findOne({'username':req.body.username}, function(err, result){
-			console.log(result);
 			if(!(result===null)) res.send({'status':'failure','info':'Username already exists.'});
 			else{
 				collection.insertOne(req.body, function(err, result){
@@ -157,13 +163,42 @@ app.post('/exchangeCoin', function(req,res){
 });
 // signs a blind coin
 app.post('/signCoin', function(req,res){
-	console.log('POST /signCoin\n' + req.body.id);
-	res.send({'status':'success','signature':sign(req.body.id)});
+	console.log('POST /signCoin\n');
+	var signature = sign(req.body.id);
+	var K = createVolatileKeys(KEYSIZE);
+	signature = applyKeys(signature,K.d,K.n);
+	var proof = bigInt(generateProof('TTP','bank',K.n.toString()),16);
+	proof = sign(proof);
+	request.post(
+	'http://127.0.0.1:8080/receiveKey',
+	{ json: {
+		'origin':'bank',
+		'destination':'TTP',
+		'value':K.n.toString(),
+		'proof':proof,
+		'e':keys.e.toString(),
+		'n':keys.n.toString() }},
+	function(error,response,body){
+	});
+	res.send({'status':'success','signature':signature});
 });
 
+app.get('/test', function(req,res){
+	request.post(
+	'http://127.0.0.1:8080/receiveKey',
+	{ json: {'origin':'bank',
+		'destination':'TTP',
+		'value':434343,
+		'proof':sign(bigInt(generateProof('TTP','bank',434343),16)),
+		'e':keys.e.toString(),
+		'n':keys.n.toString()}
+	},
+	function(error,response,body){
+	});
+});
 app.get('/key', function(req,res){
 	res.send({'e':fetchKeys().e.toString(),'n':fetchKeys().n.toString()});
 });
 
-var server = app.listen(8081);
+var server = app.listen(PORT);
 console.log('OK');
