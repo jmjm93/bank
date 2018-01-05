@@ -1,0 +1,103 @@
+<head>
+<title="Profile"></title>
+<link rel="stylesheet" href="main.css"/>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
+<script src ="./blind.js"></script>
+<script src = "./rsa.js"></script>
+<body>
+<div class="profile">
+    <form>
+		<label id="username"></label>
+		<p></p>
+		<label id="balance"></label>
+    </form>
+    <button id="getCoin">Generate new eCoin</button>
+  </div>
+</body>
+<script>
+
+var encryptedSignedBlindedCoin;
+var blindFactor;
+
+$.ajax
+	({
+	type: "GET",
+	url: "/userData",
+	crossDomain:"true",
+	}).done(function (data){
+		if(data.status === 'failure') window.alert(data.info);	
+		else if(data.status === 'success'){
+			document.getElementById("username").innerText = "User name: " + data.username;
+			document.getElementById("balance").innerText = "Balance(EUR): " + data.balance;
+		}
+		});
+	$.ajax
+	({
+	type: "GET",
+	url: "/key",
+	crossDomain:"true",
+	}).done(function (data){
+		setKeys(data.e,data.n);
+		});
+	
+
+	document.getElementById('getCoin').onclick = function()
+	{
+		console.log(fetchKeys());
+	var newId = bigInt("55555" + bigInt.randBetween(0,2e256).toString());
+	newId = blind(newId.toString());
+	blindFactor = newId.blindFactor;
+	var toSend = {'id':newId.blindedMessage};
+	$.ajax
+	({
+	type: "POST",
+	url: "/signCoin",
+	crossDomain:"true",
+	dataType:"json",
+	data:toSend,
+	}).done(function (data){
+	/*	var newCoin = unblind(data.signature,newId.blindFactor);
+		var _id = unsign(newCoin);
+	    if(_id.charCodeAt(0) != 53 || 
+	    _id.charCodeAt(1) != 53 || 
+	    _id.charCodeAt(2) != 53 || 
+	    _id.charCodeAt(3) != 53 || 
+	    _id.charCodeAt(4) != 53) window.alert("Error, couldn't verify signature.");
+	    else window.alert("Signature: \n" + newCoin + "\n Coin id: \n" + _id);
+		}); */
+		encryptedSignedBlindedCoin = data.signature;
+		$.ajax
+		({
+		type: "GET",
+		url: "http://127.0.0.1:8080/sendKey",
+		dataType:"jsonp",
+		jsonp:"callback",
+		success: function(data){
+			var signedBlindedCoin = applyKeys(encryptedSignedBlindedCoin,65537,data.value);
+                        var signedCoin = unblind(SignedBlindedCoin,newId.blindFactor);
+                        var coin = unsign(signedCoin);
+                        window.alert(coin);
+			}
+		})
+	})
+}
+	
+function handle(data)
+{
+	var signedBlindedCoin = applyKeys(encryptedSignedBlindedCoin,65537,data.value);
+	var signedCoin = unblind(signedBlindedCoin,blindFactor);
+	var coin = unsign(signedCoin);
+	window.alert("Coin id: " + coin + "\nCoin signature: " + signedCoin);
+	$.ajax
+	({
+	type: "POST",
+	url: "http://127.0.0.1:8070/insertCoin",
+	dataType:"json",
+	data: {'id':coin,'signature':signedCoin}
+	});
+	 
+}
+
+
+</script>
