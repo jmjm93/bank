@@ -21,11 +21,16 @@
 
 </body>
 <script>
+
+var username = document.location.href.split('/')[document.location.href.split('/').length-1];
+
 $.ajax
         ({
-        type: "GET",
+        type: "POST",
         url: "/fetchWallet",
         crossDomain:"true",
+	dataType:"json",
+	data:{'username':username},
         }).done(function (data){
                /* var tableMaker = o => 
                         {

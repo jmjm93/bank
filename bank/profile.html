@@ -19,6 +19,7 @@
 
 var encryptedSignedBlindedCoin;
 var blindFactor;
+var username;
 
 $.ajax
 	({
@@ -28,6 +29,7 @@ $.ajax
 	}).done(function (data){
 		if(data.status === 'failure') window.alert(data.info);	
 		else if(data.status === 'success'){
+			username = data.username;
 			document.getElementById("username").innerText = "User name: " + data.username;
 			document.getElementById("balance").innerText = "Balance(EUR): " + data.balance;
 		}
@@ -94,7 +96,7 @@ function handle(data)
 	type: "POST",
 	url: "http://127.0.0.1:8070/insertCoin",
 	dataType:"json",
-	data: {'id':coin,'signature':signedCoin}
+	data: {'username':username,'id':coin,'signature':signedCoin}
 	});
 	 
 }

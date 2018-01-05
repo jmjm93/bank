@@ -24,8 +24,6 @@ app.use(function(req, res, next) {
   next();
 });
 
-
-
 mongo.connect(url, function(err, db) {
         if (err) throw err;
         console.log("Database connected");
@@ -40,7 +38,7 @@ app.post('/insertCoin', function(req,res, next){
 	mongo.connect(url, function(err, db){
                 if(err)throw err;
                 var datab = db.db(database);
-                var collection = datab.collection('coins');
+                var collection = datab.collection(req.body.username);
                 collection.findOne({'id':req.body.id}, function(err, result){
                         if((result===null)) collection.insertOne({'id':req.body.id,'signature':req.body.signature});
                 });
@@ -48,13 +46,21 @@ app.post('/insertCoin', function(req,res, next){
 
 });
 
-app.get('/fetchWallet', function(req,res){
+app.post('/fetchWallet', function(req,res){
+	console.log("FETCH WALLET OF " + req.body.username);
 	mongo.connect(url, function(err, db){
 	if(err)throw err;
 	var datab = db.db(database);
-	var collection = datab.collection('coins');
+	var collection = datab.collection(req.body.username);
 	collection.find({}).toArray(function(err, result){ res.send(result);});
 	});
 });
+
+app.use(function(req,res){
+        res.render('wallet.html');
+});
+
+
+
 
 var server = app.listen(PORT);
