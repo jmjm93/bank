@@ -18,4 +18,5 @@ A local application. It generates an user-friendly display on the client browser
 ###### Encryption
 
 All signing/encrpytion is done via the RSA algorithm, with its implementations coded inside the `blind.js` and `rsa.js` modules on the `public` folder, the big-integer library is used.
+
 For the proof generation the hash algorithm used is MD5 as seen in the `proof.js` script, also inside the `public` folder. The MD5 implementation is the one used by the jshashes external library.
