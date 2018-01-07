@@ -7,7 +7,8 @@ var path = require('path');
 var PORT=8070;
 
 //MONGO CONF
-var mongo = require('mongodb').MongoClient;
+var mongodb = require('mongodb');
+var mongo = mongodb.MongoClient;
 var database='wallet';
 var url = "mongodb://localhost:27017/"+database;
 
@@ -47,12 +48,28 @@ app.post('/insertCoin', function(req,res, next){
 });
 
 app.post('/fetchWallet', function(req,res){
-	console.log("FETCH WALLET OF " + req.body.username);
+	if(req.body.username){
+		console.log("FETCH WALLET OF " + req.body.username);
+		mongo.connect(url, function(err, db){
+		if(err)throw err;
+		var datab = db.db(database);
+		var collection = datab.collection(req.body.username);
+		collection.find({}).toArray(function(err, result){ res.send(result);});
+		});
+	}
+});
+
+app.post('/removeCoin', function(req,res){
+	console.log("REMOVE COIN " + req.body._id);
 	mongo.connect(url, function(err, db){
 	if(err)throw err;
 	var datab = db.db(database);
 	var collection = datab.collection(req.body.username);
-	collection.find({}).toArray(function(err, result){ res.send(result);});
+	collection.deleteOne({"_id":new mongodb.ObjectId(req.body._id)}, function(err,result){
+		if(err)throw(err);
+		db.close();
+		res.send({"result":"ok"});
+		});
 	});
 });
 

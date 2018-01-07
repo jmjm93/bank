@@ -14,12 +14,13 @@ var fs = require('fs');
 eval(fs.readFileSync('./../public/blind.js').toString());
 eval(fs.readFileSync('./../public/proof.js').toString());
 eval(fs.readFileSync('./../public/rsa.js').toString());
-var KEYSIZE = bigInt("2");
-KEYSIZE = KEYSIZE.pow(512);
+var KEYSIZE = bigInt(2);
+KEYSIZE = KEYSIZE.pow(128);
 generateKeys(KEYSIZE);
 var keys=fetchKeys();
 
 var PORT=8081;
+var ttpName='127:0.0.1:8070/';
 
 //MONGO CONF
 var mongo = require('mongodb').MongoClient;
@@ -165,7 +166,7 @@ app.post('/exchangeCoin', function(req,res){
 app.post('/signCoin', function(req,res){
 	console.log('POST /signCoin\n');
 	var signature = sign(req.body.id);
-	var K = createVolatileKeys(KEYSIZE);
+	var K = createVolatileKeys(2e256);
 	signature = applyKeys(signature,K.d,K.n);
 	var proof = bigInt(generateProof('TTP','bank',K.n.toString()),16);
 	proof = sign(proof);

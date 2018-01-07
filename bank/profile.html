@@ -47,7 +47,7 @@ $.ajax
 	document.getElementById('getCoin').onclick = function()
 	{
 		console.log(fetchKeys());
-	var newId = bigInt("55555" + bigInt.randBetween(0,2e256).toString());
+	var newId = bigInt("55555" + bigInt.randBetween(0,2e64).toString());
 	newId = blind(newId.toString());
 	blindFactor = newId.blindFactor;
 	var toSend = {'id':newId.blindedMessage};
@@ -74,19 +74,14 @@ $.ajax
 		type: "GET",
 		url: "http://127.0.0.1:8080/sendKey",
 		dataType:"jsonp",
-		jsonp:"callback",
-		success: function(data){
-			var signedBlindedCoin = applyKeys(encryptedSignedBlindedCoin,65537,data.value);
-                        var signedCoin = unblind(SignedBlindedCoin,newId.blindFactor);
-                        var coin = unsign(signedCoin);
-                        window.alert(coin);
-			}
+		jsonp:"callback"
 		})
 	})
 }
 	
 function handle(data)
 {
+	console.log("encryption module: " + data.value.toString());
 	var signedBlindedCoin = applyKeys(encryptedSignedBlindedCoin,65537,data.value);
 	var signedCoin = unblind(signedBlindedCoin,blindFactor);
 	var coin = unsign(signedCoin);

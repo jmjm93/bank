@@ -12,7 +12,7 @@ eval(fs.readFileSync('./../public/proof.js').toString());
 eval(fs.readFileSync('./../public/blind.js').toString());
 
 var KEYSIZE = bigInt("2");
-KEYSIZE = KEYSIZE.pow(512);
+KEYSIZE = KEYSIZE.pow(128);
 generateKeys(KEYSIZE);
 var keys=fetchKeys();
 

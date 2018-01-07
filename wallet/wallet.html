@@ -18,55 +18,69 @@
     <ul class="article-list-vertical">
 
     </ul>
-
+    <div class="count"></div>
 </body>
 <script>
 
 var username = document.location.href.split('/')[document.location.href.split('/').length-1];
+var count = 0;
 
-$.ajax
-        ({
-        type: "POST",
-        url: "/fetchWallet",
-        crossDomain:"true",
+getWallet();
+
+
+function removeCoin(id)
+{
+	$.ajax
+	({
+	type: "POST",
+	url: "/removeCoin",
+	crossDomain:"true",
 	dataType:"json",
-	data:{'username':username},
-        }).done(function (data){
-               /* var tableMaker = o => 
-                        {
-                        var keys = Object.keys(o[0]),
-                        rowMaker = (a,t) => a.reduce((p,c,i,a) => p + (i === a.length-1 ? "<" + t + ">" + c + "</" + t + "></tr>"
-                                                                                   : "<" + t + ">" + c + "</" + t + ">"),"<tr>"),
-                        rows = o.reduce((r,c) => r + rowMaker(keys.reduce((v,k) => v.concat(c[k]),[]),"td"),rowMaker(keys,"th"));
-                   return "<table>" + rows + "</table>";
-                  };*/
-		var html="";
-		var i=0;
-		data.forEach(function(element){
-			html = html + "<li>\n<div><h2><a> Coin "+ i+"</a></h2>\n";
-			html = html + "<p>Local identifier: " + element._id + "</p>\n";
-			html = html + "<a onclick='getSignature(\""+element.signature+"\")' class='read-more'>Get signature &rarr;</a>";
-			i++;
-		});
-        $('.article-list-vertical').append(html);
-        });
+	data:{"_id":id,"username":username},
+	}).done(function (data){
+		$("#"+id).remove();
+		count--;
+		$('.count').empty();
+		$('.count').append(count + " eCoins in the current wallet.");
+	});
+}
 
 
 function getSignature(signature)
 	{
-	console.log(signature);
-    var dummy = document.createElement("input");
-    //dummy.style.display = 'none'
-    document.body.appendChild(dummy);
-    //$(dummy).css('display','none');
-    dummy.setAttribute("id", "dummy_id");
-    //dummy.setAttribute('value', document.URL + '; ' + document.title)
-    dummy.setAttribute('value', signature);
-    //document.getElementById("dummy_id").value=val;
-    dummy.select();
-    document.execCommand("copy");
-    document.body.removeChild(dummy);    
-	}
+    
+		var dummy = document.createElement("input");
+	    document.body.appendChild(dummy);
+	    dummy.setAttribute("id", "dummy_id");
+	    dummy.setAttribute('value', signature);
+	    dummy.select();
+	    document.execCommand("copy");
+	    document.body.removeChild(dummy);    
+		}
 
+function getWallet()
+{
+	$.ajax
+        ({
+        type: "POST",
+        url: "/fetchWallet",
+        crossDomain:"true",
+        dataType:"json",
+        data:{'username':username},
+        }).done(function (data){
+                var html="";
+                count=0;
+                data.forEach(function(element){
+                        html = html + "<li id='"+element._id+"'><div class='div'>\n<a class='close' onclick='removeCoin(\""+element._id+"\")'>\n<h2><a> 1.0 eCoin </a></h2>\n";
+                        html = html + "<p>Local identifier: " + element._id + "</p>\n";
+                        html = html + "<a onclick='getSignature(\""+element.signature+"\")' class='read-more'>Get signature &rarr;</a>";
+                        count++;
+                });
+        $('.article-list-vertical').append(html);
+        $('.count').empty();
+	$('.count').append(count + " eCoins in the current wallet.");
+	});
+
+}
 </script>
 </html>
