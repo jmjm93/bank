@@ -5,6 +5,8 @@
 <script src="http://peterolson.github.com/BigInteger.js/BigInteger.min.js"></script>
 <script src ="./blind.js"></script>
 <script src = "./rsa.js"></script>
+<script src = "./proof.js"></script>
+<script src = "http://cdn.rawgit.com/h2non/jsHashes/master/hashes.js"></script>
 <body>
 <div class="profile">
     <form>
@@ -81,19 +83,29 @@ $.ajax
 	
 function handle(data)
 {
-	console.log("encryption module: " + data.value.toString());
-	var signedBlindedCoin = applyKeys(encryptedSignedBlindedCoin,65537,data.value);
-	var signedCoin = unblind(signedBlindedCoin,blindFactor);
-	var coin = unsign(signedCoin);
-	window.alert("Coin id: " + coin + "\nCoin signature: " + signedCoin);
-	$.ajax
-	({
-	type: "POST",
-	url: "http://127.0.0.1:8070/insertCoin",
-	dataType:"json",
-	data: {'username':username,'id':coin,'signature':signedCoin}
-	});
-	 
+	//console.log("encryption module: " + data.value.toString());
+	var unsignedProof = bigInt(applyKeys(data.proof,data.e,data.n)).toString(16);
+	if(!checkProof(unsignedProof,data.destination,data.origin,data.value))  window.alert("Error, couldn't verify proof.");
+	else{
+		var signedBlindedCoin = applyKeys(encryptedSignedBlindedCoin,65537,data.value);
+		var signedCoin = unblind(signedBlindedCoin,blindFactor);
+		var coin = unsign(signedCoin);
+		if(coin.charCodeAt(0) != 53 ||
+		coin.charCodeAt(1) != 53 ||
+		coin.charCodeAt(2) != 53 ||
+		coin.charCodeAt(3) != 53 ||
+		coin.charCodeAt(4) != 53) window.alert("Error, couldn't verify signature.");
+		else{ 
+			window.alert("Coin id: " + coin + "\nCoin signature: " + signedCoin);
+			$.ajax
+			({
+			type: "POST",
+			url: "http://127.0.0.1:8070/insertCoin",
+			dataType:"json",
+			data: {'username':username,'id':coin,'signature':signedCoin}
+			});
+		}
+	} 
 }
 
 

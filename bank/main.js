@@ -14,8 +14,12 @@ var fs = require('fs');
 eval(fs.readFileSync('./../public/blind.js').toString());
 eval(fs.readFileSync('./../public/proof.js').toString());
 eval(fs.readFileSync('./../public/rsa.js').toString());
+
 var KEYSIZE = bigInt(2);
-KEYSIZE = KEYSIZE.pow(128);
+var COINSIZE = KEYSIZE.pow(64); // coin random number generator size = 2e64
+KEYSIZE = KEYSIZE.pow(128); // RSA key size = 2e128
+
+
 generateKeys(KEYSIZE);
 var keys=fetchKeys();
 
@@ -139,27 +143,29 @@ app.get('/userData', auth, function(req,res){
 app.post('/exchangeCoin', function(req,res){
 	mongo.connect(url, function(err, db){
 		var _id = unsign(req.body.id);
-	    if(_id.charCodeAt(0) != 53 || 
+		var ans = {};    
+	if(_id.charCodeAt(0) != 53 || 
 	    _id.charCodeAt(1) != 53 || 
 	    _id.charCodeAt(2) != 53 || 
 	    _id.charCodeAt(3) != 53 || 
-	    _id.charCodeAt(4) != 53) res.send({'status':'failure','info':'Signature seems forged.'}); 
+	    _id.charCodeAt(4) != 53) ans=({'status':'failure','info':'Signature seems forged.'}); 
 		if(err)throw err;
 		var datab = db.db(database);
 		var collection = datab.collection('coin');
 		collection.findOne({'id':_id}, function(err, result){
-			if(!(result===null)) res.send({'status':'failure','info':'Coin already spent.'});
+			if(!(result===null)) ans=({'status':'failure','info':'Coin already spent.'});
 			else{
 				collection.insertOne(req.body, function(err, result){
 					if(err) throw err;
-					if(result==null) res.send({'status':'failure','info':'Database failure.'});
+					if(result==null) ans=({'status':'failure','info':'Database failure.'});
 						else{
-						var newId = bigInt("55555" + bigInt.randBetween(0,2e256).toString());
-						res.send({'status':'success','coin':sign(newId)});
+						var newId = bigInt("55555" + bigInt.randBetween(0,COINSIZE).toString());
+						ans=({'status':'success','coin':sign(newId)});
 					}
 				});
 			} 
 		});
+	res.send(ans);
 	});
 });
 // signs a blind coin
