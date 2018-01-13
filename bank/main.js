@@ -15,12 +15,14 @@ eval(fs.readFileSync('./../public/blind.js').toString());
 eval(fs.readFileSync('./../public/proof.js').toString());
 eval(fs.readFileSync('./../public/rsa.js').toString());
 
-var KEYSIZE = bigInt(2);
-var COINSIZE = KEYSIZE.pow(64); // coin random number generator size = 2e64
-KEYSIZE = KEYSIZE.pow(128); // RSA key size = 2e128
+var COINSIZE = bigInt(2);
+var COINSIZE = COINSIZE.pow(64); // coin random number generator size = 2e64
 
 
-generateKeys(KEYSIZE);
+var _module = "13103101110603982022409063154034834208053872394325116495475032370831226577777";
+var _public  = "65537";
+var _private = "12895569198053713726038148898669343600874322464738982871823394419773126257345";
+setKeys(_public,_module,_private);
 var keys=fetchKeys();
 
 var PORT=8081;
@@ -148,24 +150,24 @@ app.post('/exchangeCoin', function(req,res){
 	    _id.charCodeAt(1) != 53 || 
 	    _id.charCodeAt(2) != 53 || 
 	    _id.charCodeAt(3) != 53 || 
-	    _id.charCodeAt(4) != 53) ans=({'status':'failure','info':'Signature seems forged.'}); 
-		if(err)throw err;
-		var datab = db.db(database);
-		var collection = datab.collection('coin');
-		collection.findOne({'id':_id}, function(err, result){
-			if(!(result===null)) ans=({'status':'failure','info':'Coin already spent.'});
-			else{
-				collection.insertOne(req.body, function(err, result){
-					if(err) throw err;
-					if(result==null) ans=({'status':'failure','info':'Database failure.'});
-						else{
-						var newId = bigInt("55555" + bigInt.randBetween(0,COINSIZE).toString());
-						ans=({'status':'success','coin':sign(newId)});
-					}
-				});
-			} 
-		});
-	res.send(ans);
+	    _id.charCodeAt(4) != 53) res.send({'status':'failure','info':'Signature seems forged.'}); 
+		else{
+			if(err)throw err;
+			var datab = db.db(database);
+			var collection = datab.collection('coin');
+			collection.findOne({'id':_id}, function(err, result){
+				if(!(result===null)) res.send({'status':'failure','info':'Coin already spent.'});
+				else{
+					collection.insertOne({'id':_id}, function(err, result){
+						if(!(result===null)){
+							var newId = bigInt("55555" + bigInt.randBetween(0,COINSIZE).toString());
+							ans=({'status':'success','coin':sign(newId)});
+							res.send(ans);
+						}
+					});
+				} 
+			});
+	}
 	});
 });
 // signs a blind coin

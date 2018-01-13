@@ -2,9 +2,9 @@
 // in the case of the client it'll only contain the public key and module
 var key;
 
-function setKeys(exp,mod)
+function setKeys(exp,mod,priv)
 {
-	key = {'n':bigInt(mod),'e':bigInt(exp)};
+	key = {'n':bigInt(mod),'e':bigInt(exp),'d':bigInt(priv)};
 }
 
 function generateKeys(size)
