@@ -24,6 +24,9 @@ var blindFactor;
 var username;
 
 
+var clientKeys;
+var serverKeys;
+
 $.ajax
 	({
 	type: "GET",
@@ -33,7 +36,7 @@ $.ajax
 		if(data.status === 'failure') window.alert(data.info);	
 		else if(data.status === 'success'){
 			username = data.username;
-			document.getElementById("username").innerText = "User name: " + data.username;
+			document.getElementById("username").innerText =  data.username + " profile";
 			document.getElementById("balance").innerText = "Balance(EUR): " + data.balance;
 		}
 		});
@@ -42,18 +45,24 @@ $.ajax
 	type: "GET",
 	url: "/key",
 	crossDomain:"true",
-	}).done(function (data){
-		setKeys(data.e,data.n);
-		});
+	}).done(function (data) {
+        serverKeys = {'e': data.e, 'n': data.n};
+        setKeys(data.e, data.n);
+        clientKeys = data.client
+    });
+
 	
 
 	document.getElementById('getCoin').onclick = function()
 	{
-		console.log(fetchKeys());
-	var newId = bigInt("55555" + bigInt.randBetween(0,2e64).toString());
+
+	var newId = bigInt("55555" + bigInt.randBetween(0,2e32).toString());
 	newId = blind(newId.toString());
 	blindFactor = newId.blindFactor;
-	var toSend = {'id':newId.blindedMessage};
+	var proof_origin = generateProof('bank','client',newId.blindedMessage);
+	proof_origin = bigInt(proof_origin,16);
+	proof_origin = applyKeys(proof_origin,clientKeys.d,clientKeys.n);
+	var toSend = {'id':newId.blindedMessage,'proof':proof_origin,'e':clientKeys.e,'n':clientKeys.n};
 	$.ajax
 	({
 	type: "POST",
@@ -61,42 +70,48 @@ $.ajax
 	crossDomain:"true",
 	dataType:"json",
 	data:toSend,
-	}).done(function (data){
-	/*	var newCoin = unblind(data.signature,newId.blindFactor);
-		var _id = unsign(newCoin);
-	    if(_id.charCodeAt(0) != 53 || 
-	    _id.charCodeAt(1) != 53 || 
-	    _id.charCodeAt(2) != 53 || 
-	    _id.charCodeAt(3) != 53 || 
-	    _id.charCodeAt(4) != 53) window.alert("Error, couldn't verify signature.");
-	    else window.alert("Signature: \n" + newCoin + "\n Coin id: \n" + _id);
-		}); */
-		encryptedSignedBlindedCoin = data.signature;
-		$.ajax
-		({
-		type: "GET",
-		url: "http://127.0.0.1:8080/sendKey",
-		dataType:"jsonp",
-		jsonp:"callback"
-		})
-	})
+	}).done(function (data) {
+        if (data.status !== 'failure') {
+            encryptedSignedBlindedCoin = data.signature;
+            var proof_reception = applyKeys(data.proof,serverKeys.e,serverKeys.n);
+            proof_reception = bigInt(proof_reception).toString(16);
+            if (!checkProof(proof_reception, 'client', 'bank', data.signature)) window.alert("Error, couldn't verify proof of reception.");
+            else {
+
+                $.ajax
+                ({
+                    type: "GET",
+                    url: "http://127.0.0.1:8080/sendKey",
+                    dataType: "jsonp",
+                    jsonp: "callback"
+                })
+            }
+        }
+        else window.alert(data.info);
+    })
 }
 	
 function handle(data)
 {
 	//console.log("encryption module: " + data.value.toString());
 	var unsignedProof = bigInt(applyKeys(data.proof,data.e,data.n)).toString(16);
-	if(!checkProof(unsignedProof,data.destination,data.origin,data.value))  window.alert("Error, couldn't verify proof.");
+	if(!checkProof(unsignedProof,data.destination,data.origin,data.value))  window.alert("Error, couldn't verify proof of publication.");
 	else{
 		var signedBlindedCoin = applyKeys(encryptedSignedBlindedCoin,65537,data.value);
 		var signedCoin = unblind(signedBlindedCoin,blindFactor);
-		var coin = unsign(signedCoin);
+		var coin = applyKeys(signedCoin,serverKeys.e,serverKeys.n);
 		if(coin.charCodeAt(0) != 53 ||
 		coin.charCodeAt(1) != 53 ||
 		coin.charCodeAt(2) != 53 ||
 		coin.charCodeAt(3) != 53 ||
-		coin.charCodeAt(4) != 53) window.alert("Error, couldn't verify signature.");
-		else{ 
+		coin.charCodeAt(4) != 53) {
+            window.alert("Error, couldn't verify signature.");
+            console.log("UNBLINDED UNSIGNED DECRYPTED COIN " + coin);
+            console.log("UNBLINDED DECRYPTED COIN " + signedCoin.toString());
+            console.log("DECRYPTED COIN " + signedBlindedCoin.toString());
+            console.log("COIN " + encryptedSignedBlindedCoin.toString());
+		}
+         else{
 			window.alert("Coin id: " + coin + "\nCoin signature: " + signedCoin);
 			$.ajax
 			({

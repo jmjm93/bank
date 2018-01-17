@@ -27,7 +27,6 @@ app.use(function(req, res, next) {
 
 mongo.connect(url, function(err, db) {
         if (err) throw err;
-        console.log("Database connected");
 });
 
 app.get('/', function(req,res){
@@ -35,7 +34,6 @@ app.get('/', function(req,res){
 });
 
 app.post('/insertCoin', function(req,res, next){
-	console.log("INSERT COIN");
 	mongo.connect(url, function(err, db){
                 if(err)throw err;
                 var datab = db.db(database);
@@ -49,7 +47,6 @@ app.post('/insertCoin', function(req,res, next){
 
 app.post('/fetchWallet', function(req,res){
 	if(req.body.username){
-		console.log("FETCH WALLET OF " + req.body.username);
 		mongo.connect(url, function(err, db){
 		if(err)throw err;
 		var datab = db.db(database);
@@ -60,7 +57,6 @@ app.post('/fetchWallet', function(req,res){
 });
 
 app.post('/removeCoin', function(req,res){
-	console.log("REMOVE COIN " + req.body._id);
 	mongo.connect(url, function(err, db){
 	if(err)throw err;
 	var datab = db.db(database);
@@ -81,3 +77,4 @@ app.use(function(req,res){
 
 
 var server = app.listen(PORT);
+console.log('WALLET RUNNING ON PORT ' + PORT);
