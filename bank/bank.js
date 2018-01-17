@@ -196,19 +196,6 @@ app.post('/signCoin', function(req,res){
 		res.send({'status':'success','signature':signature,'proof':proof_reception}); // sends encrypted signed blinded document to client
 	}
 });
-// creates keys using bignum instead of the RSA module, since it's faster
-function createKeys(length)
-{
-	var p = bignum.prime(length,true);
-	var q = bignum.prime(length,true);
-	var n = p.mul(q);
-	var _p = p.sub(1);
-	var _q = q.sub(1);
-	var totient = _p.mul(_q);
-	var e = bignum("65537");
-	var d = e.invertm(totient);
-	return {'n':n.toString(),'e':e.toString(),'d':d.toString()}
-}
 
 app.get('/key', function(req,res){
 	res.send({'e':serverKeys.e,'n':serverKeys.n,'client':clientKeys});
