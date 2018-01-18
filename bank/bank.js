@@ -7,7 +7,6 @@ var cookieParser = require('cookie-parser');
 var path = require('path');
 var session = require('express-session');
 var bigInt = require('big-integer');
-var bignum = require('bignum');
 var Hashes = require('jshashes');
 var fs = require('fs');
 
